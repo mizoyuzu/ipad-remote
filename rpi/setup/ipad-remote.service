@@ -1,0 +1,19 @@
+[Unit]
+Description=iPad Remote HID Service
+After=network-online.target sys-kernel-config.mount
+Wants=network-online.target
+Requires=sys-kernel-config.mount
+
+[Service]
+Type=simple
+ExecStartPre=/opt/ipad-remote/rpi/setup/usb_gadget_setup.sh
+ExecStart=/usr/bin/python3 -m src.main
+WorkingDirectory=/opt/ipad-remote/rpi
+Restart=always
+RestartSec=3
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
