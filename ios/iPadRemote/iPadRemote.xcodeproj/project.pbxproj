@@ -1,0 +1,337 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1000001 /* iPadRemoteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001; };
+		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000002; };
+		A1000003 /* InputMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000003; };
+		A1000004 /* Packet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000004; };
+		A1000005 /* ConnectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000005; };
+		A1000006 /* TrackpadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000006; };
+		A1000007 /* ScrollModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000007; };
+		A1000008 /* ArrowKeyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000008; };
+		A1000009 /* ConnectionBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000009; };
+		A100000A /* ShortcutBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000A; };
+		A100000B /* UDPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000B; };
+		A100000C /* BonjourBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000C; };
+		A100000D /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000D; };
+		A100000E /* AccelerationCurve.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000E; };
+		A100000F /* InertiaEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000F; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B1000001 /* iPadRemoteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPadRemoteApp.swift; sourceTree = "<group>"; };
+		B1000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B1000003 /* InputMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMode.swift; sourceTree = "<group>"; };
+		B1000004 /* Packet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packet.swift; sourceTree = "<group>"; };
+		B1000005 /* ConnectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionState.swift; sourceTree = "<group>"; };
+		B1000006 /* TrackpadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackpadView.swift; sourceTree = "<group>"; };
+		B1000007 /* ScrollModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollModeView.swift; sourceTree = "<group>"; };
+		B1000008 /* ArrowKeyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrowKeyView.swift; sourceTree = "<group>"; };
+		B1000009 /* ConnectionBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionBar.swift; sourceTree = "<group>"; };
+		B100000A /* ShortcutBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutBar.swift; sourceTree = "<group>"; };
+		B100000B /* UDPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UDPClient.swift; sourceTree = "<group>"; };
+		B100000C /* BonjourBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourBrowser.swift; sourceTree = "<group>"; };
+		B100000D /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		B100000E /* AccelerationCurve.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccelerationCurve.swift; sourceTree = "<group>"; };
+		B100000F /* InertiaEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InertiaEngine.swift; sourceTree = "<group>"; };
+		C1000001 /* iPadRemote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iPadRemote.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D1000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E1000001 = {
+			isa = PBXGroup;
+			children = (
+				E1000002 /* iPadRemote */,
+				E1000009 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E1000002 /* iPadRemote */ = {
+			isa = PBXGroup;
+			children = (
+				B1000001 /* iPadRemoteApp.swift */,
+				B1000002 /* ContentView.swift */,
+				E1000003 /* Models */,
+				E1000004 /* Views */,
+				E1000005 /* Services */,
+				E1000006 /* Gestures */,
+			);
+			path = iPadRemote;
+			sourceTree = "<group>";
+		};
+		E1000003 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B1000003 /* InputMode.swift */,
+				B1000004 /* Packet.swift */,
+				B1000005 /* ConnectionState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E1000004 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B1000006 /* TrackpadView.swift */,
+				B1000007 /* ScrollModeView.swift */,
+				B1000008 /* ArrowKeyView.swift */,
+				B1000009 /* ConnectionBar.swift */,
+				B100000A /* ShortcutBar.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E1000005 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B100000B /* UDPClient.swift */,
+				B100000C /* BonjourBrowser.swift */,
+				B100000D /* HapticManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E1000006 /* Gestures */ = {
+			isa = PBXGroup;
+			children = (
+				B100000E /* AccelerationCurve.swift */,
+				B100000F /* InertiaEngine.swift */,
+			);
+			path = Gestures;
+			sourceTree = "<group>";
+		};
+		E1000009 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C1000001 /* iPadRemote.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F1000001 /* iPadRemote */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F1000010 /* Build configuration list for PBXNativeTarget "iPadRemote" */;
+			buildPhases = (
+				F1000002 /* Sources */,
+				D1000001 /* Frameworks */,
+				F1000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iPadRemote;
+			productName = iPadRemote;
+			productReference = C1000001 /* iPadRemote.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F1000004 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					F1000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = F1000011 /* Build configuration list for PBXProject "iPadRemote" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E1000001;
+			productRefGroup = E1000009 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F1000001 /* iPadRemote */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F1000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F1000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000001 /* iPadRemoteApp.swift in Sources */,
+				A1000002 /* ContentView.swift in Sources */,
+				A1000003 /* InputMode.swift in Sources */,
+				A1000004 /* Packet.swift in Sources */,
+				A1000005 /* ConnectionState.swift in Sources */,
+				A1000006 /* TrackpadView.swift in Sources */,
+				A1000007 /* ScrollModeView.swift in Sources */,
+				A1000008 /* ArrowKeyView.swift in Sources */,
+				A1000009 /* ConnectionBar.swift in Sources */,
+				A100000A /* ShortcutBar.swift in Sources */,
+				A100000B /* UDPClient.swift in Sources */,
+				A100000C /* BonjourBrowser.swift in Sources */,
+				A100000D /* HapticManager.swift in Sources */,
+				A100000E /* AccelerationCurve.swift in Sources */,
+				A100000F /* InertiaEngine.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F1000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		F1000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F1000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "iPad Remote";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "iPad Remote needs local network access to communicate with the Raspberry Pi receiver.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ipadremote.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F1000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "iPad Remote";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "iPad Remote needs local network access to communicate with the Raspberry Pi receiver.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ipadremote.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F1000010 /* Build configuration list for PBXNativeTarget "iPadRemote" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1000007 /* Debug */,
+				F1000008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F1000011 /* Build configuration list for PBXProject "iPadRemote" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1000005 /* Debug */,
+				F1000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = F1000004 /* Project object */;
+}
