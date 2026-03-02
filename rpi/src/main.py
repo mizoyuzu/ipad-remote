@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import logging
 import signal
+import threading
 
 from .config import BT_ADAPTER_ADDR, HIDG_KEYBOARD, HIDG_MOUSE, UDP_HOST, UDP_PORT
 from .hid_dispatcher import HIDDispatcher
@@ -30,6 +31,16 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _start_dbus_mainloop() -> None:
+    """Run the GLib main loop in a background thread for D-Bus signals."""
+    from gi.repository import GLib
+
+    loop = GLib.MainLoop()
+    thread = threading.Thread(target=loop.run, daemon=True)
+    thread.start()
+    logger.info("GLib D-Bus main loop started")
+
+
 async def _bt_accept_loop(bt_server) -> None:
     """Continuously accept new BT HID host connections in the background."""
     while True:
@@ -47,11 +58,20 @@ async def main() -> None:
 
     bt_server = None
     bt_accept_task = None
+    dbus_bus = None
+    bt_agent = None
 
     if args.backend in ("bt", "both"):
+        from .bt_agent import register_agent
         from .bt_hid_server import BtHIDServer
         from .bt_keyboard import BtKeyboardHID
         from .bt_mouse import BtMouseHID
+        from .bt_profile import setup_bluetooth
+
+        # Set up D-Bus main loop, SDP profile, device class, agent
+        _start_dbus_mainloop()
+        dbus_bus = setup_bluetooth()
+        bt_agent = register_agent(dbus_bus)
 
         bt_server = BtHIDServer(BT_ADAPTER_ADDR)
         bt_accept_task = asyncio.create_task(_bt_accept_loop(bt_server))

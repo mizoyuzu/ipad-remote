@@ -1,13 +1,14 @@
 [Unit]
 Description=iPad Remote HID Service
-After=network-online.target sys-kernel-config.mount
+After=network-online.target sys-kernel-config.mount bluetooth.target
 Wants=network-online.target
 Requires=sys-kernel-config.mount
+After=bluetooth.service
 
 [Service]
 Type=simple
 ExecStartPre=/opt/ipad-remote/rpi/setup/usb_gadget_setup.sh
-ExecStart=/usr/bin/python3 -m src.main
+ExecStart=/usr/bin/python3 -m src.main --backend both
 WorkingDirectory=/opt/ipad-remote/rpi
 Restart=always
 RestartSec=3
