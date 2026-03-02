@@ -1,1 +1,4 @@
-# No external dependencies - stdlib only
+# System packages needed (install via apt, not pip):
+#   sudo apt install python3-dbus python3-gi bluez
+#
+# No pip dependencies — all stdlib + system dbus/gi bindings.

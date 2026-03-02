@@ -30,11 +30,9 @@ fi
 grep -qxF 'dwc2' /etc/modules || echo 'dwc2' >> /etc/modules
 grep -qxF 'libcomposite' /etc/modules || echo 'libcomposite' >> /etc/modules
 
-# 3. Install avahi if not present
-if ! command -v avahi-daemon &>/dev/null; then
-    apt-get update -qq
-    apt-get install -y -qq avahi-daemon
-fi
+# 3. Install avahi and bluetooth dependencies
+apt-get update -qq
+apt-get install -y -qq avahi-daemon python3-dbus python3-gi bluez
 
 # 4. Copy project files
 echo "Installing to $INSTALL_DIR ..."
