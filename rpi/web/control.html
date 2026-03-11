@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPad Remote — 操作</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff;
+      color: #111;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-bottom: 1px solid #ebebeb;
+    }
+    header h1 { font-size: 15px; font-weight: 600; }
+    #ws-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #ccc; flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    #ws-dot.on { background: #22c55e; }
+    header a {
+      margin-left: auto;
+      font-size: 12px;
+      color: #999;
+      text-decoration: none;
+    }
+    header a:hover { color: #111; }
+
+    /* ── Body ── */
+    .body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    /* ── Trackpad ── */
+    #trackpad {
+      width: min(360px, 90vw);
+      height: 200px;
+      border: 1.5px solid #d0d0d0;
+      border-radius: 14px;
+      position: relative;
+      cursor: crosshair;
+      touch-action: none;
+      overflow: hidden;
+    }
+    #trackpad.active { border-color: #111; }
+    #trail-canvas {
+      position: absolute; inset: 0;
+      pointer-events: none;
+    }
+    #cursor-dot {
+      position: absolute;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #111;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      top: 50%; left: 50%;
+    }
+    #tp-hint {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: #bbb;
+      pointer-events: none;
+    }
+
+    /* ── Button groups ── */
+    .row {
+      display: flex;
+      gap: 10px;
+      width: min(360px, 90vw);
+    }
+    .btn {
+      flex: 1;
+      padding: 12px 8px;
+      border: 1.5px solid #d0d0d0;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #111;
+      transition: background 0.12s, border-color 0.12s, transform 0.08s;
+    }
+    .btn:active, .btn.flash {
+      background: #f0f0f0;
+      border-color: #111;
+      transform: scale(0.96);
+    }
+
+    /* Arrow grid */
+    .arrow-grid {
+      display: grid;
+      grid-template-areas: ". up ." "left down right";
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      width: min(360px, 90vw);
+    }
+    .btn-arrow {
+      padding: 14px;
+      border: 1.5px solid #d0d0d0;
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      color: #111;
+      transition: background 0.12s, border-color 0.12s, transform 0.08s;
+    }
+    .btn-arrow:active, .btn-arrow.flash {
+      background: #f0f0f0;
+      border-color: #111;
+      transform: scale(0.94);
+    }
+    [data-key="up"]    { grid-area: up; }
+    [data-key="left"]  { grid-area: left; }
+    [data-key="down"]  { grid-area: down; }
+    [data-key="right"] { grid-area: right; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div id="ws-dot"></div>
+  <h1>操作</h1>
+  <a href="/monitor.html" target="_blank">モニターを開く →</a>
+</header>
+
+<div class="body">
+
+  <!-- Trackpad -->
+  <div id="trackpad">
+    <canvas id="trail-canvas"></canvas>
+    <div id="cursor-dot"></div>
+    <div id="tp-hint">ドラッグ → マウス移動</div>
+  </div>
+
+  <!-- Click / Scroll -->
+  <div class="row">
+    <button class="btn" data-btn="left">左クリック</button>
+    <button class="btn" data-btn="right">右クリック</button>
+    <button class="btn" data-scroll="3">▲ スクロール</button>
+    <button class="btn" data-scroll="-3">▼ スクロール</button>
+  </div>
+
+  <!-- Arrow keys -->
+  <div class="arrow-grid">
+    <button class="btn-arrow" data-key="up">↑</button>
+    <button class="btn-arrow" data-key="left">←</button>
+    <button class="btn-arrow" data-key="down">↓</button>
+    <button class="btn-arrow" data-key="right">→</button>
+  </div>
+
+  <!-- Enter / Shortcuts -->
+  <div class="row">
+    <button class="btn" data-key="enter">⏎ Enter</button>
+    <button class="btn" data-shortcut="home">⌘ Home</button>
+    <button class="btn" data-shortcut="appswitch">⌘ Tab</button>
+  </div>
+
+</div>
+
+<script>
+// ── WebSocket ──────────────────────────────────────────────────────────────
+const dot = document.getElementById('ws-dot');
+let ws;
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen  = () => dot.classList.add('on');
+  ws.onclose = () => { dot.classList.remove('on'); setTimeout(connect, 2000); };
+}
+connect();
+function send(obj) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+}
+
+// ── Trackpad ───────────────────────────────────────────────────────────────
+const trackpad = document.getElementById('trackpad');
+const cursorDot = document.getElementById('cursor-dot');
+const canvas = document.getElementById('trail-canvas');
+const ctx = canvas.getContext('2d');
+let curX, curY, lastX, lastY, dragging = false;
+const SCALE = 1.2;
+
+function resize() {
+  canvas.width  = trackpad.clientWidth;
+  canvas.height = trackpad.clientHeight;
+  curX = canvas.width / 2; curY = canvas.height / 2;
+  moveDot();
+}
+resize();
+window.addEventListener('resize', resize);
+function moveDot() {
+  cursorDot.style.left = curX + 'px';
+  cursorDot.style.top  = curY + 'px';
+}
+
+// Fade trail
+setInterval(() => {
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}, 30);
+
+let acc = {x:0, y:0}, flushTimer = null;
+function flush() {
+  if (acc.x || acc.y) {
+    send({type:'trackpad', dx: acc.x, dy: acc.y});
+    acc.x = acc.y = 0;
+  }
+  flushTimer = null;
+}
+
+trackpad.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  dragging = true;
+  trackpad.setPointerCapture(e.pointerId);
+  trackpad.classList.add('active');
+  const r = trackpad.getBoundingClientRect();
+  lastX = e.clientX - r.left; lastY = e.clientY - r.top;
+  document.getElementById('tp-hint').style.display = 'none';
+});
+trackpad.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const r = trackpad.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const rawDx = x - lastX, rawDy = y - lastY;
+  lastX = x; lastY = y;
+  const dx = Math.max(-128, Math.min(127, Math.round(rawDx * SCALE)));
+  const dy = Math.max(-128, Math.min(127, Math.round(rawDy * SCALE)));
+  acc.x = Math.max(-128, Math.min(127, acc.x + dx));
+  acc.y = Math.max(-128, Math.min(127, acc.y + dy));
+  if (!flushTimer) flushTimer = setTimeout(flush, 16);
+  curX = Math.max(6, Math.min(canvas.width - 6, curX + rawDx));
+  curY = Math.max(6, Math.min(canvas.height - 6, curY + rawDy));
+  moveDot();
+  ctx.beginPath();
+  ctx.arc(curX, curY, 2.5, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fill();
+});
+trackpad.addEventListener('pointerup', e => {
+  dragging = false;
+  trackpad.releasePointerCapture(e.pointerId);
+  trackpad.classList.remove('active');
+  flush();
+});
+trackpad.addEventListener('pointercancel', e => {
+  dragging = false;
+  trackpad.classList.remove('active');
+});
+
+// ── Buttons ────────────────────────────────────────────────────────────────
+function flash(el) {
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 140);
+}
+
+document.querySelectorAll('[data-btn]').forEach(b =>
+  b.addEventListener('click', () => {
+    send({type:'click', button: b.dataset.btn});
+    flash(b);
+  })
+);
+document.querySelectorAll('[data-scroll]').forEach(b =>
+  b.addEventListener('click', () => {
+    send({type:'scroll', amount: parseInt(b.dataset.scroll)});
+    flash(b);
+  })
+);
+document.querySelectorAll('[data-key]').forEach(b =>
+  b.addEventListener('click', () => {
+    send({type:'arrow', key: b.dataset.key});
+    flash(b);
+  })
+);
+document.querySelectorAll('[data-shortcut]').forEach(b =>
+  b.addEventListener('click', () => {
+    send({type:'shortcut', action: b.dataset.shortcut});
+    flash(b);
+  })
+);
+
+// PC keyboard → send
+document.addEventListener('keydown', e => {
+  const map = {
+    'ArrowUp':'up','ArrowDown':'down','ArrowLeft':'left','ArrowRight':'right','Enter':'enter'
+  };
+  if (map[e.key]) { e.preventDefault(); send({type:'arrow', key: map[e.key]}); }
+});
+</script>
+</body>
+</html>

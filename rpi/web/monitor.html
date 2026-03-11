@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPad Remote — モニター</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff;
+      color: #111;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-bottom: 1px solid #ebebeb;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 15px; font-weight: 600; }
+    #ws-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #ccc; flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    #ws-dot.on { background: #22c55e; }
+    header a {
+      margin-left: auto;
+      font-size: 12px; color: #999; text-decoration: none;
+    }
+    header a:hover { color: #111; }
+
+    /* ── Main split ── */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Left: Packet visualizer + mini trackpad ── */
+    .left {
+      width: 280px;
+      border-right: 1px solid #ebebeb;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+
+    /* Packet fields */
+    .fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .field-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #aaa;
+    }
+    .field-value {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #111;
+      transition: color 0.15s;
+    }
+    .field-value.pop { color: #000; animation: pop 0.25s ease; }
+    @keyframes pop {
+      0%   { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    /* Mini trackpad canvas */
+    .section-title {
+      font-size: 11px;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    #mini-trackpad {
+      width: 100%;
+      aspect-ratio: 4/3;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      background: #fafafa;
+      position: relative;
+      overflow: hidden;
+    }
+    #mini-canvas {
+      position: absolute; inset: 0;
+    }
+    #mini-cursor {
+      position: absolute;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #111;
+      transform: translate(-50%,-50%);
+      top: 50%; left: 50%;
+      pointer-events: none;
+      transition: background 0.15s;
+    }
+    #mini-cursor.clicking { background: #ef4444; }
+
+    /* ── Right: Event log ── */
+    .right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .log-header {
+      padding: 12px 20px;
+      border-bottom: 1px solid #ebebeb;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .log-header span { font-size: 12px; color: #aaa; }
+    #clear-btn {
+      margin-left: auto;
+      font-size: 12px;
+      color: #aaa;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    #clear-btn:hover { background: #f0f0f0; color: #111; }
+
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    #log::-webkit-scrollbar { width: 4px; }
+    #log::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 2px; }
+
+    .entry {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      gap: 12px;
+      align-items: baseline;
+      padding: 5px 0;
+      border-bottom: 1px solid #f5f5f5;
+      animation: fadeIn 0.15s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform:none; } }
+    .e-time { font-size: 11px; color: #bbb; font-family: monospace; }
+    .e-desc { font-size: 13px; color: #111; }
+    .e-raw  { font-size: 11px; color: #ccc; font-family: monospace; white-space: nowrap; }
+
+    /* Mode color dots */
+    .entry[data-mode="0"] .e-desc::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; margin-right: 6px; vertical-align: middle; }
+    .entry[data-mode="1"] .e-desc::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; margin-right: 6px; vertical-align: middle; }
+    .entry[data-mode="2"] .e-desc::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; margin-right: 6px; vertical-align: middle; }
+
+    #empty {
+      color: #ccc; font-size: 13px; text-align: center; padding-top: 60px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div id="ws-dot"></div>
+  <h1>モニター</h1>
+  <a href="/control.html" target="_blank">操作を開く →</a>
+</header>
+
+<div class="main">
+
+  <!-- Left panel -->
+  <div class="left">
+
+    <div>
+      <div class="section-title">最新パケット</div>
+      <div class="fields">
+        <div class="field">
+          <div class="field-label">Mode</div>
+          <div class="field-value" id="f-mode">—</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Flags</div>
+          <div class="field-value" id="f-flags">—</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Keycode</div>
+          <div class="field-value" id="f-key">—</div>
+        </div>
+        <div class="field">
+          <div class="field-label">dx</div>
+          <div class="field-value" id="f-dx">—</div>
+        </div>
+        <div class="field">
+          <div class="field-label">dy</div>
+          <div class="field-value" id="f-dy">—</div>
+        </div>
+        <div class="field">
+          <div class="field-label">Wheel</div>
+          <div class="field-value" id="f-wheel">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">カーソル軌跡</div>
+      <div id="mini-trackpad">
+        <canvas id="mini-canvas"></canvas>
+        <div id="mini-cursor"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right: log -->
+  <div class="right">
+    <div class="log-header">
+      <span id="count">0 イベント</span>
+      <button id="clear-btn">クリア</button>
+    </div>
+    <div id="log">
+      <div id="empty">操作ページから操作するとここに表示されます</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── WebSocket ──────────────────────────────────────────────────────────────
+const dot = document.getElementById('ws-dot');
+let ws;
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws`);
+  ws.onopen  = () => dot.classList.add('on');
+  ws.onclose = () => { dot.classList.remove('on'); setTimeout(connect, 2000); };
+  ws.onmessage = e => { try { handle(JSON.parse(e.data)); } catch(_) {} };
+}
+connect();
+
+// ── Packet field update ────────────────────────────────────────────────────
+const MODE_NAMES = ['Trackpad','Scroll','Arrow'];
+function setField(id, val) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.classList.remove('pop');
+  void el.offsetWidth; // reflow
+  el.classList.add('pop');
+}
+
+// ── Mini trackpad ──────────────────────────────────────────────────────────
+const miniCanvas = document.getElementById('mini-canvas');
+const miniCtx = miniCanvas.getContext('2d');
+const miniCursor = document.getElementById('mini-cursor');
+let mx, my;
+
+function resizeMini() {
+  const tp = document.getElementById('mini-trackpad');
+  miniCanvas.width  = tp.clientWidth;
+  miniCanvas.height = tp.clientHeight;
+  mx = miniCanvas.width / 2;
+  my = miniCanvas.height / 2;
+  updateMiniCursor();
+}
+resizeMini();
+window.addEventListener('resize', resizeMini);
+
+function updateMiniCursor() {
+  miniCursor.style.left = mx + 'px';
+  miniCursor.style.top  = my + 'px';
+}
+
+// Fade trail
+setInterval(() => {
+  miniCtx.fillStyle = 'rgba(250,250,250,0.18)';
+  miniCtx.fillRect(0, 0, miniCanvas.width, miniCanvas.height);
+}, 30);
+
+function moveMiniCursor(dx, dy) {
+  mx = Math.max(5, Math.min(miniCanvas.width  - 5, mx + dx * 0.6));
+  my = Math.max(5, Math.min(miniCanvas.height - 5, my + dy * 0.6));
+  updateMiniCursor();
+  miniCtx.beginPath();
+  miniCtx.arc(mx, my, 2, 0, Math.PI * 2);
+  miniCtx.fillStyle = 'rgba(0,0,0,0.3)';
+  miniCtx.fill();
+}
+
+function flashCursor(clicking) {
+  miniCursor.classList.toggle('clicking', clicking);
+}
+
+// ── Event log ──────────────────────────────────────────────────────────────
+const logEl = document.getElementById('log');
+const emptyEl = document.getElementById('empty');
+const countEl = document.getElementById('count');
+let count = 0;
+const MAX = 300;
+
+function handle(msg) {
+  if (msg.type !== 'event') return;
+  const m = msg;
+
+  // Update fields
+  setField('f-mode',  `${m.mode}`);
+  setField('f-flags', `${m.flags.toString(16).padStart(2,'0')}`);
+  setField('f-dx',    `${m.dx}`);
+  setField('f-dy',    `${m.dy}`);
+  setField('f-wheel', `${m.wheel}`);
+  setField('f-key',   m.keycode ? m.keycode.toString(16).padStart(2,'0') : '—');
+
+  // Mini cursor animation
+  if (m.mode === 0) {
+    if (m.dx || m.dy) moveMiniCursor(m.dx, m.dy);
+    flashCursor(!!(m.flags & 0x03));
+  } else if (m.mode === 1) {
+    // scroll: nudge cursor slightly up/down
+    moveMiniCursor(0, -m.wheel * 4);
+  }
+
+  // Log entry
+  if (emptyEl) emptyEl.style.display = 'none';
+  const now = new Date();
+  const ts = now.toTimeString().slice(0, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+  const raw = `[${m.mode},${m.flags},${m.dx},${m.dy},${m.wheel},${m.keycode.toString(16).padStart(2,'0')}]`;
+
+  const entry = document.createElement('div');
+  entry.className = 'entry';
+  entry.dataset.mode = m.mode;
+  entry.innerHTML =
+    `<span class="e-time">${ts}</span>` +
+    `<span class="e-desc">${m.description}</span>` +
+    `<span class="e-raw">${raw}</span>`;
+  logEl.appendChild(entry);
+  count++;
+  countEl.textContent = `${count} イベント`;
+
+  while (logEl.children.length > MAX + 1) logEl.removeChild(logEl.children[1]);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  while (logEl.lastChild && logEl.lastChild !== emptyEl) logEl.removeChild(logEl.lastChild);
+  if (emptyEl) emptyEl.style.display = '';
+  count = 0;
+  countEl.textContent = '0 イベント';
+});
+</script>
+</body>
+</html>

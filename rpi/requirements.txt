@@ -1,4 +1,8 @@
 # System packages needed (install via apt, not pip):
-#   sudo apt install python3-dbus python3-gi bluez
+#   sudo apt install python3-dbus python3-gi bluez python3-tornado
 #
-# No pip dependencies — all stdlib + system dbus/gi bindings.
+# No pip dependencies — all stdlib + system packages.
+#
+# For uinput backend (/dev/uinput access):
+#   sudo usermod -aG input $USER   (then re-login)
+#   Or: sudo chmod a+rw /dev/uinput  (temporary)

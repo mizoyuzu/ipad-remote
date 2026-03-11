@@ -24,9 +24,24 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="iPad Remote HID service")
     parser.add_argument(
         "--backend",
-        choices=["usb", "bt", "both"],
+        choices=["usb", "bt", "both", "dryrun", "uinput"],
         default="usb",
-        help="HID output backend: usb (default), bt (Bluetooth L2CAP), or both",
+        help=(
+            "HID output backend: usb (default), bt (Bluetooth L2CAP), both, "
+            "dryrun (log only, no device required), or uinput (inject into local desktop)"
+        ),
+    )
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="Start built-in web demo server (default port 8080)",
+    )
+    parser.add_argument(
+        "--web-port",
+        type=int,
+        default=8080,
+        metavar="PORT",
+        help="Port for the web demo server (default: 8080)",
     )
     return parser.parse_args()
 
@@ -60,6 +75,7 @@ async def main() -> None:
     bt_accept_task = None
     dbus_bus = None
     bt_agent = None
+    web_runner = None
 
     if args.backend in ("bt", "both"):
         from .bt_agent import register_agent
@@ -76,7 +92,17 @@ async def main() -> None:
         bt_server = BtHIDServer(BT_ADAPTER_ADDR)
         bt_accept_task = asyncio.create_task(_bt_accept_loop(bt_server))
 
-    if args.backend == "usb":
+    if args.backend == "dryrun":
+        from .demo_backend import DryRunKeyboardHID, DryRunMouseHID
+
+        mouse = DryRunMouseHID()
+        keyboard = DryRunKeyboardHID()
+    elif args.backend == "uinput":
+        from .uinput_backend import UinputKeyboardHID, UinputMouseHID
+
+        mouse = UinputMouseHID()
+        keyboard = UinputKeyboardHID()
+    elif args.backend == "usb":
         mouse = MouseHID(HIDG_MOUSE)
         keyboard = KeyboardHID(HIDG_KEYBOARD)
     elif args.backend == "bt":
@@ -96,6 +122,14 @@ async def main() -> None:
 
     logger.info("Listening on %s:%d (backend: %s)", UDP_HOST, UDP_PORT, args.backend)
 
+    web_runner = None
+    if args.web:
+        from .web_server import create_tornado_app
+
+        tornado_app = create_tornado_app(dispatcher)
+        web_runner = tornado_app.listen(args.web_port, address="0.0.0.0")
+        logger.info("Web demo available at http://localhost:%d", args.web_port)
+
     stop = asyncio.Event()
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, stop.set)
@@ -105,6 +139,9 @@ async def main() -> None:
     logger.info("Shutting down...")
     transport.close()
     dispatcher.close()
+
+    if web_runner is not None:
+        web_runner.stop()
 
     if bt_accept_task is not None:
         bt_accept_task.cancel()
