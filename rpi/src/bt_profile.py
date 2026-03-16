@@ -101,17 +101,39 @@ HID_REPORT_DESCRIPTOR = bytes([
 # fmt: on
 
 
-def _set_adapter_discoverable(bus: dbus.SystemBus, adapter_path: str = "/org/bluez/hci0") -> None:
-    """Make the adapter discoverable and pairable."""
-    props = dbus.Interface(
-        bus.get_object(BLUEZ_BUS, adapter_path), PROPS_IFACE
-    )
-    props.Set(ADAPTER_IFACE, "Powered", dbus.Boolean(True))
-    props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(True))
-    props.Set(ADAPTER_IFACE, "DiscoverableTimeout", dbus.UInt32(0))  # forever
-    props.Set(ADAPTER_IFACE, "Pairable", dbus.Boolean(True))
-    props.Set(ADAPTER_IFACE, "PairableTimeout", dbus.UInt32(0))
+def _set_adapter_discoverable(bus: dbus.SystemBus, adapter_path: str = "/org/bluez/hci0") -> bool:
+  """Make the adapter discoverable and pairable.
+
+  Returns True if all requested properties were applied via D-Bus.
+  Returns False if one or more operations failed (non-fatal).
+  """
+  ok = True
+  props = dbus.Interface(
+    bus.get_object(BLUEZ_BUS, adapter_path), PROPS_IFACE
+  )
+
+  settings = [
+    ("Powered", dbus.Boolean(True)),
+    ("Discoverable", dbus.Boolean(True)),
+    ("DiscoverableTimeout", dbus.UInt32(0)),  # forever
+    ("Pairable", dbus.Boolean(True)),
+    ("PairableTimeout", dbus.UInt32(0)),
+  ]
+
+  for key, value in settings:
+    try:
+      props.Set(ADAPTER_IFACE, key, value)
+    except dbus.exceptions.DBusException as exc:
+      ok = False
+      logger.warning("Adapter property set failed (%s): %s", key, exc)
+
+  if ok:
     logger.info("Adapter %s: discoverable + pairable", adapter_path)
+  else:
+    logger.warning(
+      "Adapter discoverable/pairable setup is incomplete; continuing anyway"
+    )
+  return ok
 
 
 def _set_device_class() -> None:
@@ -325,7 +347,10 @@ def setup_bluetooth() -> dbus.SystemBus:
 
     _set_device_class()
     register_hid_profile(bus)
-    _set_adapter_discoverable(bus)
+    discoverable_ok = _set_adapter_discoverable(bus)
 
-    logger.info("Bluetooth HID setup complete — device is discoverable")
+    if discoverable_ok:
+      logger.info("Bluetooth HID setup complete — device is discoverable")
+    else:
+      logger.info("Bluetooth HID setup complete — run bluetoothctl to adjust adapter state if needed")
     return bus

@@ -121,6 +121,48 @@ cmd_prepare_host() {
     echo "RPi is ready for host pairing (Mac/PC)."
 }
 
+cmd_wait_pairing() {
+    ensure_bt_tools
+    local timeout_sec="${1:-120}"
+    if ! [[ "$timeout_sec" =~ ^[0-9]+$ ]]; then
+        echo "Error: timeout must be an integer number of seconds"
+        exit 1
+    fi
+
+    cmd_prepare_host
+    echo "Waiting for pairing/connection for up to ${timeout_sec}s..."
+    local end=$((SECONDS + timeout_sec))
+    local seen_connected=0
+
+    while [ "$SECONDS" -lt "$end" ]; do
+        local paired
+        paired="$(bluetoothctl paired-devices 2>/dev/null || true)"
+        local connected
+        connected="$(bluetoothctl devices Connected 2>/dev/null || true)"
+
+        if [ -n "$paired" ]; then
+            echo "--- paired devices ---"
+            echo "$paired"
+        fi
+        if [ -n "$connected" ]; then
+            echo "--- connected devices ---"
+            echo "$connected"
+            seen_connected=1
+            break
+        fi
+
+        sleep 3
+    done
+
+    if [ "$seen_connected" -eq 1 ]; then
+        echo "Pairing wait completed: at least one host is connected."
+        return 0
+    fi
+
+    echo "Timeout reached. Pairing may still succeed later from Mac Bluetooth settings."
+    echo "Tip: keep service running and use: sudo bash $0 status"
+}
+
 cmd_pair() {
     ensure_bt_tools
     local mac="${1:-}"
@@ -242,6 +284,7 @@ Usage:
   sudo bash $0 logs {bt|default}
   sudo bash $0 scan [seconds]
     sudo bash $0 prepare-host
+    sudo bash $0 wait-pairing [timeout_sec]
 
     sudo bash $0 pair-host AA:BB:CC:DD:EE:FF
     sudo bash $0 pair AA:BB:CC:DD:EE:FF   (alias)
@@ -268,6 +311,7 @@ main() {
         logs) cmd_logs "$@" ;;
         scan) cmd_scan "$@" ;;
         prepare-host) cmd_prepare_host "$@" ;;
+        wait-pairing) cmd_wait_pairing "$@" ;;
         pair-host) cmd_pair_host "$@" ;;
         pair) cmd_pair_host "$@" ;;
         unpair|remove) cmd_unpair "$@" ;;
