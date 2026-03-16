@@ -442,11 +442,20 @@ class BleHIDServer:
         props = dbus.Interface(
             bus.get_object(BLUEZ_SERVICE, adapter_path), DBUS_PROP_IFACE
         )
-        props.Set(ADAPTER_IFACE, "Powered",             dbus.Boolean(True))
-        props.Set(ADAPTER_IFACE, "Discoverable",        dbus.Boolean(True))
-        props.Set(ADAPTER_IFACE, "DiscoverableTimeout", dbus.UInt32(0))
-        props.Set(ADAPTER_IFACE, "Pairable",            dbus.Boolean(True))
-        props.Set(ADAPTER_IFACE, "PairableTimeout",     dbus.UInt32(0))
+        settings = [
+            ("Powered",             dbus.Boolean(True)),
+            ("Discoverable",        dbus.Boolean(True)),
+            ("DiscoverableTimeout", dbus.UInt32(0)),
+            ("Pairable",            dbus.Boolean(True)),
+            ("PairableTimeout",     dbus.UInt32(0)),
+        ]
+        for key, value in settings:
+            try:
+                props.Set(ADAPTER_IFACE, key, value)
+            except dbus.exceptions.DBusException as exc:
+                # Property may already be set to the desired value or
+                # managed externally (e.g. rfkill / systemd).  Continue.
+                logger.warning("Could not set adapter %s: %s (continuing)", key, exc)
 
     @staticmethod
     def _build_application(bus: dbus.SystemBus) -> _Application:
