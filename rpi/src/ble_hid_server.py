@@ -72,7 +72,8 @@ def _find_adapter(bus: dbus.SystemBus, adapter_addr: str = "") -> str:
     )
     for path, ifaces in obj_mgr.GetManagedObjects().items():
         if ADAPTER_IFACE in ifaces:
-            if not adapter_addr or ifaces[ADAPTER_IFACE].get("Address") == adapter_addr:
+            if not adapter_addr or adapter_addr == "00:00:00:00:00:00" \
+                    or ifaces[ADAPTER_IFACE].get("Address") == adapter_addr:
                 return str(path)
     raise RuntimeError("No Bluetooth adapter found")
 
