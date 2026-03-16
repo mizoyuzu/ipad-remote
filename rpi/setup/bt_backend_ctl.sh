@@ -13,6 +13,23 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVICE_BT="ipad-remote-bt.service"
 SERVICE_DEFAULT="ipad-remote.service"
 
+ensure_unit_installed() {
+    local unit_name="$1"
+    local src="$SCRIPT_DIR/$unit_name"
+    local dst="/etc/systemd/system/$unit_name"
+
+    if [ ! -f "$src" ]; then
+        echo "Error: unit file not found in setup directory: $src"
+        exit 1
+    fi
+
+    if [ ! -f "$dst" ]; then
+        echo "Installing missing unit file: $unit_name"
+        cp "$src" "$dst"
+        systemctl daemon-reload
+    fi
+}
+
 need_root() {
     if [ "$(id -u)" -ne 0 ]; then
         echo "Error: must run as root (sudo bash bt_backend_ctl.sh ...)"
@@ -48,11 +65,13 @@ cmd_service() {
     local mode="${1:-}"
     case "$mode" in
         bt)
+            ensure_unit_installed "$SERVICE_BT"
             systemctl disable --now "$SERVICE_DEFAULT" >/dev/null 2>&1 || true
             systemctl enable --now "$SERVICE_BT"
             echo "Active service: $SERVICE_BT"
             ;;
         default|usb|both)
+            ensure_unit_installed "$SERVICE_DEFAULT"
             systemctl disable --now "$SERVICE_BT" >/dev/null 2>&1 || true
             systemctl enable --now "$SERVICE_DEFAULT"
             echo "Active service: $SERVICE_DEFAULT"

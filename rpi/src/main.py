@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import logging
+import os
 import signal
 import threading
 
@@ -71,6 +72,14 @@ async def _bt_accept_loop(bt_server) -> None:
 
 async def main() -> None:
     args = _parse_args()
+
+    if args.backend in ("bt", "both", "ble") and os.geteuid() != 0:
+        logger.error(
+            "Backend '%s' requires root privileges on Linux. "
+            "Please run with sudo.",
+            args.backend,
+        )
+        raise SystemExit(1)
 
     bt_server = None
     bt_accept_task = None
