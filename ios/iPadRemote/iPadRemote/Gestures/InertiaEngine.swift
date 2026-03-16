@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 class InertiaEngine {
     private var velocity: Double = 0

@@ -1,0 +1,18 @@
+[Unit]
+Description=iPad Remote Bluetooth HID Service (for Mac host)
+After=network-online.target bluetooth.target
+Wants=network-online.target
+After=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m src.main --backend bt
+WorkingDirectory=/opt/ipad-remote/rpi
+Restart=always
+RestartSec=3
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
