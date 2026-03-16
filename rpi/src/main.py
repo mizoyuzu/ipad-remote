@@ -24,10 +24,11 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="iPad Remote HID service")
     parser.add_argument(
         "--backend",
-        choices=["usb", "bt", "both", "dryrun", "uinput"],
+        choices=["usb", "bt", "both", "ble", "dryrun", "uinput"],
         default="usb",
         help=(
             "HID output backend: usb (default), bt (Bluetooth L2CAP), both, "
+            "ble (BLE HOGP for iPhone/iPad), "
             "dryrun (log only, no device required), or uinput (inject into local desktop)"
         ),
     )
@@ -73,9 +74,18 @@ async def main() -> None:
 
     bt_server = None
     bt_accept_task = None
+    ble_server = None
     dbus_bus = None
     bt_agent = None
     web_runner = None
+
+    if args.backend == "ble":
+        from .ble_hid_server import BleHIDServer
+        from .ble_keyboard import BleKeyboardHID
+        from .ble_mouse import BleMouseHID
+
+        ble_server = BleHIDServer(BT_ADAPTER_ADDR)
+        ble_server.start()
 
     if args.backend in ("bt", "both"):
         from .bt_agent import register_agent
@@ -108,6 +118,9 @@ async def main() -> None:
     elif args.backend == "bt":
         mouse = BtMouseHID(bt_server)
         keyboard = BtKeyboardHID(bt_server)
+    elif args.backend == "ble":
+        mouse = BleMouseHID(ble_server)
+        keyboard = BleKeyboardHID(ble_server)
     else:  # both
         mouse = FanoutMouseHID(MouseHID(HIDG_MOUSE), BtMouseHID(bt_server))
         keyboard = FanoutKeyboardHID(KeyboardHID(HIDG_KEYBOARD), BtKeyboardHID(bt_server))
@@ -147,6 +160,8 @@ async def main() -> None:
         bt_accept_task.cancel()
     if bt_server is not None:
         bt_server.close()
+    if ble_server is not None:
+        ble_server.close()
 
 
 if __name__ == "__main__":
