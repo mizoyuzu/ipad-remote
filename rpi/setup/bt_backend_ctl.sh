@@ -10,6 +10,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SERVICE_BT="ipad-remote-bt.service"
 SERVICE_DEFAULT="ipad-remote.service"
 
@@ -23,9 +24,26 @@ ensure_unit_installed() {
         exit 1
     fi
 
+    local desired
+    desired="$(cat "$src")"
+
+    # For BT service, always align WorkingDirectory to current checkout.
+    if [ "$unit_name" = "$SERVICE_BT" ]; then
+        desired="$(printf '%s' "$desired" | sed "s#^WorkingDirectory=.*#WorkingDirectory=$PROJECT_DIR#")"
+    fi
+
     if [ ! -f "$dst" ]; then
-        echo "Installing missing unit file: $unit_name"
-        cp "$src" "$dst"
+        echo "Installing unit file: $unit_name"
+        printf '%s\n' "$desired" > "$dst"
+        systemctl daemon-reload
+        return
+    fi
+
+    local current
+    current="$(cat "$dst")"
+    if [ "$current" != "$desired" ]; then
+        echo "Updating unit file: $unit_name"
+        printf '%s\n' "$desired" > "$dst"
         systemctl daemon-reload
     fi
 }
@@ -239,12 +257,14 @@ cmd_wait_pairing() {
     if ! systemctl is-active --quiet "$SERVICE_BT"; then
         echo "Starting $SERVICE_BT so auto-accept agent can handle pairing..."
         cmd_service bt
-        sleep 1
+        sleep 2
     fi
 
     if ! systemctl is-active --quiet "$SERVICE_BT"; then
         echo "Error: $SERVICE_BT is not active; cannot accept pairing requests."
+        systemctl --no-pager --full status "$SERVICE_BT" || true
         echo "Check logs: sudo journalctl -u $SERVICE_BT -n 80 --no-pager"
+        journalctl -u "$SERVICE_BT" -n 40 --no-pager || true
         return 1
     fi
 
