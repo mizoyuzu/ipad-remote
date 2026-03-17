@@ -74,6 +74,17 @@ bt_is_powered() {
     bt_show | grep -q "Powered: yes"
 }
 
+bt_device_connected() {
+    local mac="$1"
+    bluetoothctl info "$mac" 2>/dev/null | grep -q "Connected: yes"
+}
+
+hid_channel_connected_since() {
+    local since_ts="$1"
+    journalctl -u "$SERVICE_BT" --since "$since_ts" --no-pager 2>/dev/null \
+        | grep -q "BT HID interrupt channel connected"
+}
+
 cmd_setup() {
     need_root
     bash "$SCRIPT_DIR/bt_setup.sh"
@@ -186,15 +197,32 @@ cmd_prepare_host() {
 cmd_wait_pairing() {
     ensure_bt_tools
     local timeout_sec="${1:-120}"
+    local host_mac="${2:-}"
+
+    if [[ -n "$host_mac" ]]; then
+        require_mac "$host_mac"
+    fi
+
     if ! [[ "$timeout_sec" =~ ^[0-9]+$ ]]; then
         echo "Error: timeout must be an integer number of seconds"
         exit 1
     fi
 
     cmd_prepare_host
-    echo "Waiting for pairing/connection for up to ${timeout_sec}s..."
+    if [[ -n "$host_mac" ]]; then
+        echo "Waiting for HID pairing/connection to host ${host_mac} for up to ${timeout_sec}s..."
+    else
+        echo "Waiting for HID pairing/connection for up to ${timeout_sec}s..."
+    fi
     local end=$((SECONDS + timeout_sec))
     local seen_connected=0
+    local wait_since
+    wait_since="$(date -Iseconds)"
+
+    if ! systemctl is-active --quiet "$SERVICE_BT"; then
+        echo "[warn] $SERVICE_BT is not active."
+        echo "       wait-pairing will only confirm by target MAC if provided."
+    fi
 
     while [ "$SECONDS" -lt "$end" ]; do
         local paired
@@ -209,8 +237,21 @@ cmd_wait_pairing() {
         if [ -n "$connected" ]; then
             echo "--- connected devices ---"
             echo "$connected"
-            seen_connected=1
-            break
+        fi
+
+        # Success criteria:
+        # 1) if host MAC is specified, that exact host must be Connected: yes
+        # 2) otherwise, BT HID interrupt channel must be connected in service logs
+        if [[ -n "$host_mac" ]]; then
+            if bt_device_connected "$host_mac"; then
+                seen_connected=1
+                break
+            fi
+        else
+            if hid_channel_connected_since "$wait_since"; then
+                seen_connected=1
+                break
+            fi
         fi
 
         sleep 3
@@ -223,6 +264,9 @@ cmd_wait_pairing() {
 
     echo "Timeout reached. Pairing may still succeed later from Mac Bluetooth settings."
     echo "Tip: keep service running and use: sudo bash $0 status"
+    if [[ -n "$host_mac" ]]; then
+        echo "Tip: verify target host state: sudo bash $0 info $host_mac"
+    fi
 }
 
 cmd_pair() {
@@ -346,7 +390,7 @@ Usage:
   sudo bash $0 logs {bt|default}
   sudo bash $0 scan [seconds]
     sudo bash $0 prepare-host
-    sudo bash $0 wait-pairing [timeout_sec]
+    sudo bash $0 wait-pairing [timeout_sec] [host_mac]
 
     sudo bash $0 pair-host AA:BB:CC:DD:EE:FF
     sudo bash $0 pair AA:BB:CC:DD:EE:FF   (alias)
