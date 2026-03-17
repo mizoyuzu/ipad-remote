@@ -48,6 +48,22 @@ ensure_unit_installed() {
     fi
 }
 
+set_allowed_host_policy() {
+    local mac="${1:-}"
+    local dir="/etc/systemd/system/${SERVICE_BT}.d"
+    local file="$dir/20-agent-policy.conf"
+
+    mkdir -p "$dir"
+    if [ -n "$mac" ]; then
+        printf '[Service]\nEnvironment="IPAD_REMOTE_BT_ALLOWED_HOST=%s"\n' "$mac" > "$file"
+        echo "Set BT agent allowed host policy: $mac"
+    else
+        rm -f "$file"
+        echo "Cleared BT agent allowed host policy"
+    fi
+    systemctl daemon-reload
+}
+
 need_root() {
     if [ "$(id -u)" -ne 0 ]; then
         echo "Error: must run as root (sudo bash bt_backend_ctl.sh ...)"
@@ -247,6 +263,11 @@ cmd_wait_pairing() {
         require_mac "$host_mac"
     fi
 
+    # Keep agent in full auto-accept mode (no host restriction).
+    set_allowed_host_policy ""
+    # Re-activate service so policy is applied immediately.
+    cmd_service bt
+
     if ! [[ "$timeout_sec" =~ ^[0-9]+$ ]]; then
         echo "Error: timeout must be an integer number of seconds"
         exit 1
@@ -338,9 +359,13 @@ cmd_pair() {
 }
 
 cmd_pair_host() {
+    need_root
     ensure_bt_tools
     local mac="${1:-}"
     require_mac "$mac"
+    # Keep agent in full auto-accept mode (no host restriction).
+    set_allowed_host_policy ""
+    cmd_service bt
     cmd_prepare_host
     echo "Pairing host device from Raspberry Pi side: $mac"
     bluetoothctl pair "$mac"
