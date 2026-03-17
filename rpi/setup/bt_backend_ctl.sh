@@ -55,6 +55,25 @@ ensure_bt_tools() {
     }
 }
 
+bt_try() {
+    local label="$1"
+    shift
+    if "$@" >/dev/null 2>&1; then
+        echo "[ok] $label"
+        return 0
+    fi
+    echo "[warn] $label failed"
+    return 1
+}
+
+bt_show() {
+    bluetoothctl show 2>/dev/null || true
+}
+
+bt_is_powered() {
+    bt_show | grep -q "Powered: yes"
+}
+
 cmd_setup() {
     need_root
     bash "$SCRIPT_DIR/bt_setup.sh"
@@ -130,13 +149,37 @@ cmd_scan() {
 }
 
 cmd_prepare_host() {
+    need_root
     ensure_bt_tools
     echo "Preparing Raspberry Pi as pairable/discoverable HID device..."
-    bluetoothctl power on
-    bluetoothctl pairable on
-    bluetoothctl discoverable on
-    bluetoothctl agent NoInputNoOutput
-    bluetoothctl default-agent
+
+    # Try to recover adapter state before bluetoothctl operations.
+    bt_try "restart bluetooth service" systemctl restart bluetooth || true
+    if command -v rfkill >/dev/null 2>&1; then
+        bt_try "rfkill unblock bluetooth" rfkill unblock bluetooth || true
+    fi
+    if command -v hciconfig >/dev/null 2>&1; then
+        bt_try "hciconfig hci0 up" hciconfig hci0 up || true
+    fi
+    if command -v btmgmt >/dev/null 2>&1; then
+        bt_try "btmgmt power on" btmgmt power on || true
+    fi
+
+    bt_try "bluetoothctl power on" bluetoothctl power on || true
+    bt_try "bluetoothctl pairable on" bluetoothctl pairable on || true
+    bt_try "bluetoothctl discoverable on" bluetoothctl discoverable on || true
+    bt_try "bluetoothctl agent NoInputNoOutput" bluetoothctl agent NoInputNoOutput || true
+    bt_try "bluetoothctl default-agent" bluetoothctl default-agent || true
+
+    if ! bt_is_powered; then
+        echo "Error: Bluetooth adapter is still not powered on."
+        echo "Run diagnostics: bluetoothctl list ; rfkill list ; hciconfig -a"
+        echo "Then retry: sudo bash $0 prepare-host"
+        return 1
+    fi
+
+    echo "Current controller state:"
+    bt_show | sed -n '1,20p'
     echo "RPi is ready for host pairing (Mac/PC)."
 }
 
