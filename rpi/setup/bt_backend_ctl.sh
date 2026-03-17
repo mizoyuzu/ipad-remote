@@ -195,6 +195,7 @@ cmd_prepare_host() {
 }
 
 cmd_wait_pairing() {
+    need_root
     ensure_bt_tools
     local timeout_sec="${1:-120}"
     local host_mac="${2:-}"
@@ -208,6 +209,20 @@ cmd_wait_pairing() {
         exit 1
     fi
 
+    # Pairing approval is handled by the Python BT agent (src.bt_agent),
+    # so ensure bt backend service is running before waiting.
+    if ! systemctl is-active --quiet "$SERVICE_BT"; then
+        echo "Starting $SERVICE_BT so auto-accept agent can handle pairing..."
+        cmd_service bt
+        sleep 1
+    fi
+
+    if ! systemctl is-active --quiet "$SERVICE_BT"; then
+        echo "Error: $SERVICE_BT is not active; cannot accept pairing requests."
+        echo "Check logs: sudo journalctl -u $SERVICE_BT -n 80 --no-pager"
+        return 1
+    fi
+
     cmd_prepare_host
     if [[ -n "$host_mac" ]]; then
         echo "Waiting for HID pairing/connection to host ${host_mac} for up to ${timeout_sec}s..."
@@ -219,10 +234,7 @@ cmd_wait_pairing() {
     local wait_since
     wait_since="$(date -Iseconds)"
 
-    if ! systemctl is-active --quiet "$SERVICE_BT"; then
-        echo "[warn] $SERVICE_BT is not active."
-        echo "       wait-pairing will only confirm by target MAC if provided."
-    fi
+    echo "Auto-accept agent source: $SERVICE_BT (src.bt_agent)"
 
     while [ "$SECONDS" -lt "$end" ]; do
         local paired
