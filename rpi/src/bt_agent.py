@@ -14,6 +14,14 @@ logger = logging.getLogger(__name__)
 AGENT_IFACE = "org.bluez.Agent1"
 AGENT_MGR_IFACE = "org.bluez.AgentManager1"
 AGENT_PATH = "/org/bluez/ipad_remote_agent"
+DEFAULT_AGENT_CAPABILITY = "DisplayYesNo"
+ALLOWED_AGENT_CAPABILITIES = {
+    "DisplayOnly",
+    "DisplayYesNo",
+    "KeyboardOnly",
+    "NoInputNoOutput",
+    "KeyboardDisplay",
+}
 
 
 def _device_path_to_mac(device_path: str) -> str | None:
@@ -96,11 +104,21 @@ def register_agent(bus: dbus.SystemBus) -> AutoAcceptAgent:
     """Register the auto-accept agent as the default agent."""
     agent = AutoAcceptAgent(bus, AGENT_PATH)
 
+    requested = os.environ.get("IPAD_REMOTE_BT_AGENT_CAPABILITY", "").strip()
+    capability = requested or DEFAULT_AGENT_CAPABILITY
+    if capability not in ALLOWED_AGENT_CAPABILITIES:
+        logger.warning(
+            "Unsupported IPAD_REMOTE_BT_AGENT_CAPABILITY=%r, falling back to %s",
+            capability,
+            DEFAULT_AGENT_CAPABILITY,
+        )
+        capability = DEFAULT_AGENT_CAPABILITY
+
     agent_mgr = dbus.Interface(
         bus.get_object("org.bluez", "/org/bluez"), AGENT_MGR_IFACE
     )
-    agent_mgr.RegisterAgent(AGENT_PATH, "NoInputNoOutput")
+    agent_mgr.RegisterAgent(AGENT_PATH, capability)
     agent_mgr.RequestDefaultAgent(AGENT_PATH)
 
-    logger.info("Auto-accept agent registered as default")
+    logger.info("Auto-accept agent registered as default (capability=%s)", capability)
     return agent

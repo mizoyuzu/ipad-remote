@@ -138,6 +138,22 @@ bt_list_paired_devices() {
     done < <(bt_list_all_devices)
 }
 
+bt_list_connected_devices() {
+    local mac
+    while read -r mac; do
+        [ -z "$mac" ] && continue
+        if bt_device_connected "$mac"; then
+            local line
+            line="$(bluetoothctl devices 2>/dev/null | grep "^Device $mac " || true)"
+            if [ -n "$line" ]; then
+                echo "$line"
+            else
+                echo "Device $mac"
+            fi
+        fi
+    done < <(bt_list_all_devices)
+}
+
 hid_channel_connected_since() {
     local since_ts="$1"
     journalctl -u "$SERVICE_BT" --since "$since_ts" --no-pager 2>/dev/null \
@@ -238,7 +254,7 @@ cmd_prepare_host() {
     bt_try "bluetoothctl power on" bluetoothctl power on || true
     bt_try "bluetoothctl pairable on" bluetoothctl pairable on || true
     bt_try "bluetoothctl discoverable on" bluetoothctl discoverable on || true
-    bt_try "bluetoothctl agent NoInputNoOutput" bluetoothctl agent NoInputNoOutput || true
+    bt_try "bluetoothctl agent DisplayYesNo" bluetoothctl agent DisplayYesNo || true
     bt_try "bluetoothctl default-agent" bluetoothctl default-agent || true
 
     if ! bt_is_powered; then
@@ -306,7 +322,7 @@ cmd_wait_pairing() {
         local paired
         paired="$(bt_list_paired_devices || true)"
         local connected
-        connected="$(bluetoothctl devices Connected 2>/dev/null || true)"
+        connected="$(bt_list_connected_devices || true)"
 
         if [ -n "$paired" ]; then
             echo "--- paired devices ---"
